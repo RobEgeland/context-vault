@@ -1,0 +1,50 @@
+{
+  "productName": "Context Vault",
+  "version": "0.1.0",
+  "identifier": "com.contextVault.app",
+  "build": {
+    "beforeDevCommand": "pnpm vite:dev",
+    "beforeBuildCommand": "pnpm vite:build",
+    "devUrl": "http://localhost:1420",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "label": "main",
+        "title": "Context Vault",
+        "width": 1280,
+        "height": 800,
+        "minWidth": 900,
+        "minHeight": 600,
+        "decorations": true,
+        "transparent": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/64x64.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": {
+      "../evals/BRANCHING_RUBRIC.md": "BRANCHING_RUBRIC.md"
+    }
+  },
+  "plugins": {
+    "sql": {
+      "preloadConnections": [
+        "sqlite:context-vault.db"
+      ]
+    }
+  }
+}

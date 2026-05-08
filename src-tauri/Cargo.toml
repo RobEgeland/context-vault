@@ -1,0 +1,38 @@
+[package]
+name = "context-vault"
+version = "0.1.0"
+description = "Context Vault — local-first AI conversation manager"
+authors = ["Rob Egeland"]
+edition = "2021"
+
+[lib]
+name = "context_vault_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-sql = { version = "2", features = ["sqlite"] }
+tauri-plugin-fs = { version = "2" }
+tauri-plugin-shell = { version = "2" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[package.metadata.bundle]
+identifier = "com.contextVault.app"
+icon = [
+  "icons/32x32.png",
+  "icons/128x128.png",
+  "icons/128x128@2x.png",
+  "icons/icon.icns",
+  "icons/icon.ico",
+]
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "s"
+strip = true

@@ -1,0 +1,37 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+dist/
+src-tauri/target/
+
+# Tauri
+src-tauri/gen/
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Editor
+.vscode/settings.json
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Vault data (user data lives outside repo)
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
+vault-mirror/
+
+# Eval run outputs (generated, not committed)
+evals/runs/

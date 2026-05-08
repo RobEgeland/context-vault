@@ -1,0 +1,37 @@
+# Golden eval: CORS + auth middleware ordering
+# Tests that the pipeline correctly identifies:
+#  - 1 branch (turns 0-1, multi-turn substantive exchange)
+#  - 1 notable_fact (turns 2-3, single Q+A)
+#  - 0 noise turns
+
+id: cors-middleware-001
+project_name: Express API Debug
+transcript_file: cors-middleware-001.transcript.md
+
+expected:
+  branches:
+    - title_contains: "CORS"          # partial match, case-insensitive
+      type: issue
+      min_span_count: 2
+      required_tags: ["cors"]
+      required_entities_any: ["cors()", "OPTIONS", "auth middleware"]
+
+    - title_contains: "middleware"
+      type: decision
+      min_span_count: 1
+      required_tags: ["cors"]
+
+  notable_facts:
+    - key_contains: "cors"            # partial match
+      span_index: 3
+      required_tags_any: ["cors", "versioning", "express"]
+
+  noise_span_indices: []
+
+  # Success criteria (all must pass)
+  success:
+    min_branch_count: 1
+    max_branch_count: 4
+    min_fact_count: 1
+    all_turns_covered: true           # every turn in branch or fact or noise
+    no_single_turn_branches: true     # no branch with only 1 span_index
