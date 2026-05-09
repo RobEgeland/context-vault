@@ -4,6 +4,8 @@ import { ChevronRight, ChevronDown } from "lucide-react";
 import { NodesRepository } from "../../lib/storage/NodesRepository";
 import type { Node, NodeType } from "../../lib/storage/types";
 import { useUIStore } from "../../lib/state/uiStore";
+import { SearchBar } from "./SearchBar";
+import { SearchResults } from "./SearchResults";
 
 // ─── Tree item shape ──────────────────────────────────────────────────────────
 
@@ -129,6 +131,17 @@ function Row({
   );
 }
 
+// ─── Search-active check ──────────────────────────────────────────────────────
+
+function isSearchActive(query: string, filters: { types: string[]; tags: string[]; projectId: string | null }): boolean {
+  return (
+    query.trim().length > 0 ||
+    filters.types.length > 0 ||
+    filters.tags.length > 0 ||
+    filters.projectId !== null
+  );
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function NodeTree() {
@@ -137,7 +150,12 @@ export function NodeTree() {
   const [treeData, setTreeData] = useState<TreeItem[]>([]);
   const [openState, setOpenState] = useState<Record<string, boolean>>(loadExpanded);
 
-  const { selectedNodeId, setSelectedNodeId, refreshTick } = useUIStore();
+  const {
+    selectedNodeId, setSelectedNodeId, refreshTick,
+    searchQuery, searchFilters,
+  } = useUIStore();
+
+  const searching = isSearchActive(searchQuery, searchFilters);
 
   // Resize observer so the virtualised tree fills its container
   useEffect(() => {
@@ -151,8 +169,6 @@ export function NodeTree() {
   }, []);
 
   // Reload tree whenever a mutation fires.
-  // Also re-read expansion state from localStorage so that callers (e.g. ingest)
-  // can pre-seed an open entry before calling bumpRefresh().
   useEffect(() => {
     void NodesRepository.listAllNodes().then((nodes) => {
       setTreeData(buildTree(nodes));
@@ -173,28 +189,39 @@ export function NodeTree() {
   }
 
   return (
-    <div ref={containerRef} className="flex-1 overflow-hidden">
-      {treeData.length === 0 ? (
-        <p className="px-4 py-6 text-xs text-vault-muted text-center">
-          No nodes yet — use "Seed dev data" or Add&nbsp;(+) to create one.
-        </p>
+    <div className="flex flex-col flex-1 overflow-hidden">
+
+      {/* ── Search bar + filters (always visible) ────────────────────────── */}
+      <SearchBar refreshTick={refreshTick} />
+
+      {/* ── Tree or results ───────────────────────────────────────────────── */}
+      {searching ? (
+        <SearchResults />
       ) : (
-        <Tree<TreeItem>
-          data={treeData}
-          width={dims.width}
-          height={dims.height}
-          rowHeight={30}
-          indent={16}
-          openByDefault={false}
-          initialOpenState={openState}
-          onToggle={handleToggle}
-          selection={selectedNodeId ?? undefined}
-          onSelect={handleSelect}
-          disableDrag
-          disableDrop
-        >
-          {Row}
-        </Tree>
+        <div ref={containerRef} className="flex-1 overflow-hidden">
+          {treeData.length === 0 ? (
+            <p className="px-4 py-6 text-xs text-vault-muted text-center">
+              No nodes yet — use "Ingest" to add a conversation.
+            </p>
+          ) : (
+            <Tree<TreeItem>
+              data={treeData}
+              width={dims.width}
+              height={dims.height}
+              rowHeight={30}
+              indent={16}
+              openByDefault={false}
+              initialOpenState={openState}
+              onToggle={handleToggle}
+              selection={selectedNodeId ?? undefined}
+              onSelect={handleSelect}
+              disableDrag
+              disableDrop
+            >
+              {Row}
+            </Tree>
+          )}
+        </div>
       )}
     </div>
   );

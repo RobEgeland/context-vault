@@ -52,3 +52,17 @@ export interface Span {
 
 /** Input shape — caller omits id and node_id (supplied by appendMessageSpans). */
 export type NewSpan = Omit<Span, "id" | "node_id">;
+
+// ─── Search ───────────────────────────────────────────────────────────────────
+
+export interface SearchResult {
+  node_id:       string;
+  title:         string;
+  type:          string;
+  parent_id:     string | null;
+  /** Title of the parent project node, for the breadcrumb. */
+  project_title: string | null;
+  /** FTS5 snippet with <mark>…</mark> highlight tags, or '' for filter-only hits. */
+  snippet:       string;
+  rank:          number;
+}

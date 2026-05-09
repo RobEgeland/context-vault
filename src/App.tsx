@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Toaster } from "react-hot-toast";
 import { Trash2, Upload } from "lucide-react";
 import { NodeTree } from "./components/vault/NodeTree";
@@ -45,11 +45,24 @@ function IconBtn({
 // ─── App ──────────────────────────────────────────────────────────────────────
 
 export default function App() {
-  const { selectedNodeId, setSelectedNodeId, bumpRefresh } = useUIStore();
+  const { selectedNodeId, setSelectedNodeId, bumpRefresh, bumpSearchFocus } = useUIStore();
 
   const [showDelete, setShowDelete]   = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showIngest, setShowIngest]   = useState(false);
+
+  // ── Global Cmd/Ctrl+K → focus search bar ──────────────────────────────────────
+
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        bumpSearchFocus();
+      }
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [bumpSearchFocus]);
 
   // ── Delete ────────────────────────────────────────────────────────────────────
 
