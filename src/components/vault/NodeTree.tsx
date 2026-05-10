@@ -131,15 +131,42 @@ function Row({
   );
 }
 
-// ─── Search-active check ──────────────────────────────────────────────────────
+// ─── Search-active check ─────────────────────────────────────────────────────
+//
+// Type-chip filters are applied directly to the tree (see filterTreeByTypes).
+// Only a text query, tag filter, or project filter triggers the SearchResults view.
 
-function isSearchActive(query: string, filters: { types: string[]; tags: string[]; projectId: string | null }): boolean {
+function isSearchActive(query: string, filters: { tags: string[]; projectId: string | null }): boolean {
   return (
     query.trim().length > 0 ||
-    filters.types.length > 0 ||
     filters.tags.length > 0 ||
     filters.projectId !== null
   );
+}
+
+// ─── In-tree type filter ──────────────────────────────────────────────────────
+//
+// Recursively keeps items whose nodeType is in `types`, plus any parent
+// items that still have matching children after filtering.
+// Returns the original array unchanged when `types` is empty (show all).
+
+function filterTreeByTypes(items: TreeItem[], types: string[]): TreeItem[] {
+  if (!types.length) return items;
+
+  return items.reduce<TreeItem[]>((acc, item) => {
+    const filteredChildren = item.children
+      ? filterTreeByTypes(item.children, types)
+      : undefined;
+
+    if (types.includes(item.nodeType)) {
+      // This item matches — keep it (with its children also filtered)
+      acc.push({ ...item, children: filteredChildren });
+    } else if (filteredChildren?.length) {
+      // This item doesn't match but has matching descendants — keep as container
+      acc.push({ ...item, children: filteredChildren });
+    }
+    return acc;
+  }, []);
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -155,9 +182,15 @@ export function NodeTree() {
     searchQuery, searchFilters,
   } = useUIStore();
 
-  const searching = isSearchActive(searchQuery, searchFilters);
+  // SearchResults replaces the tree only for text/tag/project queries.
+  // Type chips filter the tree data directly (see below).
+  const searching = isSearchActive(searchQuery, {
+    tags: searchFilters.tags,
+    projectId: searchFilters.projectId,
+  });
 
-  // Resize observer so the virtualised tree fills its container
+  // Resize observer — re-attaches whenever the tree div mounts/unmounts
+  // (the div is removed from the DOM while SearchResults is showing).
   useEffect(() => {
     if (!containerRef.current) return;
     const ro = new ResizeObserver((entries) => {
@@ -166,7 +199,7 @@ export function NodeTree() {
     });
     ro.observe(containerRef.current);
     return () => ro.disconnect();
-  }, []);
+  }, [searching]); // re-run when toggling between tree and results
 
   // Reload tree whenever a mutation fires.
   useEffect(() => {
@@ -199,28 +232,46 @@ export function NodeTree() {
         <SearchResults />
       ) : (
         <div ref={containerRef} className="flex-1 overflow-hidden">
-          {treeData.length === 0 ? (
-            <p className="px-4 py-6 text-xs text-vault-muted text-center">
-              No nodes yet — use "Ingest" to add a conversation.
-            </p>
-          ) : (
-            <Tree<TreeItem>
-              data={treeData}
-              width={dims.width}
-              height={dims.height}
-              rowHeight={30}
-              indent={16}
-              openByDefault={false}
-              initialOpenState={openState}
-              onToggle={handleToggle}
-              selection={selectedNodeId ?? undefined}
-              onSelect={handleSelect}
-              disableDrag
-              disableDrop
-            >
-              {Row}
-            </Tree>
-          )}
+          {(() => {
+            // Apply type chips as a client-side tree filter.
+            // Empty selection = no filter = show everything.
+            const visibleData = filterTreeByTypes(treeData, searchFilters.types);
+
+            if (treeData.length === 0) {
+              return (
+                <p className="px-4 py-6 text-xs text-vault-muted text-center">
+                  No nodes yet — use "Ingest" to add a conversation.
+                </p>
+              );
+            }
+
+            if (visibleData.length === 0) {
+              return (
+                <p className="px-4 py-6 text-xs text-vault-muted text-center">
+                  No nodes match the selected types.
+                </p>
+              );
+            }
+
+            return (
+              <Tree<TreeItem>
+                data={visibleData}
+                width={dims.width}
+                height={dims.height}
+                rowHeight={30}
+                indent={16}
+                openByDefault={false}
+                initialOpenState={openState}
+                onToggle={handleToggle}
+                selection={selectedNodeId ?? undefined}
+                onSelect={handleSelect}
+                disableDrag
+                disableDrop
+              >
+                {Row}
+              </Tree>
+            );
+          })()}
         </div>
       )}
     </div>

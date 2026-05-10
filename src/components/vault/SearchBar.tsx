@@ -32,8 +32,9 @@ function toggleItem<T>(arr: T[], item: T): T[] {
   return arr.includes(item) ? arr.filter((x) => x !== item) : [...arr, item];
 }
 
-function hasActiveFilters(f: SearchFilters): boolean {
-  return f.types.length > 0 || f.tags.length > 0 || f.projectId !== null;
+// Type chips are in-tree filters and don't count as "active search"
+function hasActiveSearchFilters(f: SearchFilters): boolean {
+  return f.tags.length > 0 || f.projectId !== null;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -97,7 +98,8 @@ export function SearchBar({ refreshTick }: Props) {
     [searchFilters, setSearchFilters]
   );
 
-  const isActive = draft.length > 0 || hasActiveFilters(searchFilters);
+  // X button / clear only applies to text + tag + project (not type chips)
+  const isActive = draft.length > 0 || hasActiveSearchFilters(searchFilters);
 
   return (
     <div className="flex flex-col gap-0 shrink-0 border-b border-vault-border">
@@ -133,8 +135,9 @@ export function SearchBar({ refreshTick }: Props) {
       {/* ── Filter chips ────────────────────────────────────────────────────── */}
       <div className="flex flex-col gap-1 px-2 pb-2">
 
-        {/* Type chips row — "Show all" link appears when any filter is active */}
-        <div className="flex flex-wrap items-center gap-1">
+        {/* Type chips — toggle to filter the tree in-place.
+            Inactive chips are dimmed; no chips selected = show all nodes. */}
+        <div className="flex flex-wrap gap-1">
           {TYPE_CHIPS.map(({ id, label, bg, text }) => {
             const active = searchFilters.types.includes(id);
             return (
@@ -146,23 +149,12 @@ export function SearchBar({ refreshTick }: Props) {
                   bg, text,
                   active ? "opacity-100 ring-1 ring-white/20" : "opacity-40 hover:opacity-70",
                 ].join(" ")}
-                title={active ? "Click to remove filter" : `Filter by type: ${id}`}
+                title={active ? `${label} — click to show all` : `Show only ${label} nodes`}
               >
                 {label}
               </button>
             );
           })}
-
-          {/* "Show all" appears whenever any filter or text query is active */}
-          {isActive && (
-            <button
-              onClick={handleClear}
-              className="ml-auto text-[10px] text-vault-accent hover:text-vault-accent-hover transition-colors underline underline-offset-2"
-              title="Clear all filters and search"
-            >
-              Show all
-            </button>
-          )}
         </div>
 
         {/* Tag chips (only if the vault has any tags) */}
