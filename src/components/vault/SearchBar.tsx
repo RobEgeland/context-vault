@@ -123,7 +123,7 @@ export function SearchBar({ refreshTick }: Props) {
           <button
             onClick={handleClear}
             className="shrink-0 text-vault-muted hover:text-vault-text transition-colors"
-            title="Clear search (Esc)"
+            title="Clear search and filters — show all nodes (Esc)"
           >
             <X size={12} />
           </button>
@@ -133,8 +133,8 @@ export function SearchBar({ refreshTick }: Props) {
       {/* ── Filter chips ────────────────────────────────────────────────────── */}
       <div className="flex flex-col gap-1 px-2 pb-2">
 
-        {/* Type chips */}
-        <div className="flex flex-wrap gap-1">
+        {/* Type chips row — "Show all" link appears when any filter is active */}
+        <div className="flex flex-wrap items-center gap-1">
           {TYPE_CHIPS.map(({ id, label, bg, text }) => {
             const active = searchFilters.types.includes(id);
             return (
@@ -146,12 +146,23 @@ export function SearchBar({ refreshTick }: Props) {
                   bg, text,
                   active ? "opacity-100 ring-1 ring-white/20" : "opacity-40 hover:opacity-70",
                 ].join(" ")}
-                title={`Filter by type: ${id}`}
+                title={active ? "Click to remove filter" : `Filter by type: ${id}`}
               >
                 {label}
               </button>
             );
           })}
+
+          {/* "Show all" appears whenever any filter or text query is active */}
+          {isActive && (
+            <button
+              onClick={handleClear}
+              className="ml-auto text-[10px] text-vault-accent hover:text-vault-accent-hover transition-colors underline underline-offset-2"
+              title="Clear all filters and search"
+            >
+              Show all
+            </button>
+          )}
         </div>
 
         {/* Tag chips (only if the vault has any tags) */}
